@@ -14,6 +14,11 @@ datasource db {
 
 
 
+enum UserRole {
+  USER
+  ADMIN
+}
+
 model User {
   id        Int      @id @default(autoincrement())
   email     String   @unique
@@ -22,6 +27,7 @@ model User {
   firstName String?
   lastName  String?
   avatar    String?
+  role UserRole @default(USER)
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 }
