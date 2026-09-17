@@ -10,7 +10,9 @@ import {
 import { AuthService } from './auth.service';
 import { LoginDto } from './dto/login.dto';
 import { RegisterDto } from './dto/register.dto';
+import { Roles } from './decorators/roles.decorator';
 import { JwtAuthGuard } from './guards/jwt-auth.guard';
+import { RolesGuard } from './guards/roles.guard';
 
 @Controller('auth')
 export class AuthController {
@@ -30,5 +32,14 @@ export class AuthController {
   @UseGuards(JwtAuthGuard)
   getMe(@Request() req: any) {
     return req.user;
+  }
+
+  @Get('admin-test')
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Roles('ADMIN')
+  adminTest() {
+    return {
+      message: 'You are an admin',
+    };
   }
 }
