@@ -11,7 +11,6 @@ import { JwtStrategy } from './strategies/jwt.strategy';
     PassportModule.register({
       defaultStrategy: 'jwt',
     }),
-
     JwtModule.register({
       secret: process.env.JWT_SECRET,
       signOptions: {
@@ -21,5 +20,6 @@ import { JwtStrategy } from './strategies/jwt.strategy';
   ],
   controllers: [AuthController],
   providers: [AuthService, JwtStrategy],
+  exports: [PassportModule],
 })
 export class AuthModule {}
