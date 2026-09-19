@@ -5,8 +5,9 @@ import {
 } from '@nestjs/common';
 import * as bcrypt from 'bcrypt';
 
-import { CreateUserDto } from './dto/create-user.dto';
 import { PrismaService } from '../prisma/prisma.service';
+import { CreateUserDto } from './dto/create-user.dto';
+import { UpdateUserDto } from './dto/update-user.dto';
 
 @Injectable()
 export class UsersService {
@@ -70,6 +71,46 @@ export class UsersService {
     } catch (error) {
       if (error instanceof Error && 'code' in error && error.code === 'P2002') {
         throw new ConflictException('Username or email already exists');
+      }
+
+      throw error;
+    }
+  }
+
+  async update(id: number, updateUserDto: UpdateUserDto) {
+    const data = { ...updateUserDto };
+
+    if (updateUserDto.password) {
+      data.password = await bcrypt.hash(updateUserDto.password, 12);
+    }
+
+    try {
+      const user = await this.prisma.user.update({
+        where: {
+          id,
+        },
+        data,
+        select: {
+          id: true,
+          email: true,
+          username: true,
+          firstName: true,
+          lastName: true,
+          avatar: true,
+          role: true,
+          createdAt: true,
+          updatedAt: true,
+        },
+      });
+
+      return user;
+    } catch (error) {
+      if (error instanceof Error && 'code' in error && error.code === 'P2025') {
+        throw new NotFoundException('User not found');
+      }
+
+      if (error instanceof Error && 'code' in error && error.code === 'P2002') {
+        throw new ConflictException('Username already exists');
       }
 
       throw error;
