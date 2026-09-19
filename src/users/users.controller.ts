@@ -4,16 +4,16 @@ import {
   Get,
   Param,
   Patch,
-  Post,
   Req,
   UseGuards,
 } from '@nestjs/common';
 import { Request } from 'express';
 
 import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
-import { CreateUserDto } from './dto/create-user.dto';
 import { UpdateUserDto } from './dto/update-user.dto';
 import { UsersService } from './users.service';
+import { Roles } from '../auth/decorators/roles.decorator';
+import { RolesGuard } from '../auth/guards/roles.guard';
 
 interface AuthenticatedRequest extends Request {
   user: {
@@ -33,18 +33,17 @@ export class UsersController {
   }
 
   @Get()
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Roles('ADMIN')
   findAll() {
     return this.usersService.findAll();
   }
 
   @Get(':id')
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Roles('ADMIN')
   findOne(@Param('id') id: string) {
     return this.usersService.findOne(Number(id));
-  }
-
-  @Post()
-  create(@Body() createUserDto: CreateUserDto) {
-    return this.usersService.create(createUserDto);
   }
 
   @Patch('me')
@@ -56,6 +55,8 @@ export class UsersController {
   }
 
   @Patch(':id')
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Roles('ADMIN')
   update(@Param('id') id: string, @Body() updateUserDto: UpdateUserDto) {
     return this.usersService.update(Number(id), updateUserDto);
   }
