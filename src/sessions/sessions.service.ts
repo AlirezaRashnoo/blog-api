@@ -27,7 +27,7 @@ export class SessionsService {
     };
   }
 
-  async validate(sessionId: string, refreshToken: string) {
+  async rotate(sessionId: string, refreshToken: string) {
     const session = await this.prisma.session.findUnique({
       where: {
         id: sessionId,
@@ -48,9 +48,38 @@ export class SessionsService {
     );
 
     if (!isValid) {
-      throw new UnauthorizedException('Invalid refresh token');
+      await this.revoke(sessionId);
+
+      throw new UnauthorizedException('Refresh token reuse detected');
     }
 
-    return session;
+    const newRefreshToken = randomBytes(64).toString('hex');
+
+    const newRefreshTokenHash = await bcrypt.hash(newRefreshToken, 12);
+
+    const updatedSession = await this.prisma.session.update({
+      where: {
+        id: sessionId,
+      },
+      data: {
+        refreshTokenHash: newRefreshTokenHash,
+      },
+    });
+
+    return {
+      session: updatedSession,
+      refreshToken: newRefreshToken,
+    };
+  }
+
+  async revoke(sessionId: string) {
+    await this.prisma.session.update({
+      where: {
+        id: sessionId,
+      },
+      data: {
+        revokedAt: new Date(),
+      },
+    });
   }
 }

@@ -79,14 +79,11 @@ export class AuthService {
   }
 
   async refresh(sessionId: string, refreshToken: string) {
-    const session = await this.sessionsService.validate(
-      sessionId,
-      refreshToken,
-    );
+    const result = await this.sessionsService.rotate(sessionId, refreshToken);
 
     const user = await this.prisma.user.findUnique({
       where: {
-        id: session.userId,
+        id: result.session.userId,
       },
     });
 
@@ -101,6 +98,16 @@ export class AuthService {
 
     return {
       access_token: accessToken,
+      refresh_token: result.refreshToken,
+      session_id: result.session.id,
+    };
+  }
+
+  async logout(sessionId: string) {
+    await this.sessionsService.revoke(sessionId);
+
+    return {
+      message: 'Logged out successfully',
     };
   }
 }
