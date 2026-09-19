@@ -1,9 +1,3 @@
-// import { Body, Controller, Get, Param, Post, UseGuards } from '@nestjs/common';
-
-import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
-import { CreateUserDto } from './dto/create-user.dto';
-import { UpdateUserDto } from './dto/update-user.dto';
-import { UsersService } from './users.service';
 import {
   Body,
   Controller,
@@ -11,13 +5,32 @@ import {
   Param,
   Patch,
   Post,
+  Req,
   UseGuards,
 } from '@nestjs/common';
+import { Request } from 'express';
+
+import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
+import { CreateUserDto } from './dto/create-user.dto';
+import { UpdateUserDto } from './dto/update-user.dto';
+import { UsersService } from './users.service';
+
+interface AuthenticatedRequest extends Request {
+  user: {
+    userId: number;
+    role: 'USER' | 'ADMIN';
+  };
+}
 
 @Controller('users')
 @UseGuards(JwtAuthGuard)
 export class UsersController {
   constructor(private readonly usersService: UsersService) {}
+
+  @Get('me')
+  findMe(@Req() req: AuthenticatedRequest) {
+    return this.usersService.findOne(req.user.userId);
+  }
 
   @Get()
   findAll() {
@@ -32,6 +45,14 @@ export class UsersController {
   @Post()
   create(@Body() createUserDto: CreateUserDto) {
     return this.usersService.create(createUserDto);
+  }
+
+  @Patch('me')
+  updateMe(
+    @Req() req: AuthenticatedRequest,
+    @Body() updateUserDto: UpdateUserDto,
+  ) {
+    return this.usersService.update(req.user.userId, updateUserDto);
   }
 
   @Patch(':id')
