@@ -27,7 +27,24 @@ model User {
   firstName String?
   lastName  String?
   avatar    String?
-  role UserRole @default(USER)
+  role      UserRole @default(USER)
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
+
+  sessions Session[]
+}
+
+
+model Session {
+  id               String   @id @default(cuid())
+  userId           Int
+  refreshTokenHash String
+  expiresAt        DateTime
+  createdAt        DateTime @default(now())
+  updatedAt        DateTime @updatedAt
+  revokedAt        DateTime?
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
 }
