@@ -7,6 +7,7 @@ import { JwtService } from '@nestjs/jwt';
 import * as bcrypt from 'bcrypt';
 
 import { PrismaService } from '../prisma/prisma.service';
+import { SessionsService } from '../sessions/sessions.service';
 import { LoginDto } from './dto/login.dto';
 import { RegisterDto } from './dto/register.dto';
 
@@ -15,6 +16,7 @@ export class AuthService {
   constructor(
     private readonly prisma: PrismaService,
     private readonly jwtService: JwtService,
+    private readonly sessionsService: SessionsService,
   ) {}
 
   async register(registerDto: RegisterDto) {
@@ -60,13 +62,42 @@ export class AuthService {
       throw new UnauthorizedException('Invalid credentials');
     }
 
-    const payload = {
+    const accessToken = this.jwtService.sign({
       sub: user.id,
-      email: user.email,
       role: user.role,
-    };
+    });
 
-    const accessToken = this.jwtService.sign(payload);
+    const expiresAt = new Date(Date.now() + 7 * 24 * 60 * 60 * 1000);
+
+    const session = await this.sessionsService.create(user.id, expiresAt);
+
+    return {
+      access_token: accessToken,
+      refresh_token: session.refreshToken,
+      session_id: session.sessionId,
+    };
+  }
+
+  async refresh(sessionId: string, refreshToken: string) {
+    const session = await this.sessionsService.validate(
+      sessionId,
+      refreshToken,
+    );
+
+    const user = await this.prisma.user.findUnique({
+      where: {
+        id: session.userId,
+      },
+    });
+
+    if (!user) {
+      throw new UnauthorizedException('User not found');
+    }
+
+    const accessToken = this.jwtService.sign({
+      sub: user.id,
+      role: user.role,
+    });
 
     return {
       access_token: accessToken,

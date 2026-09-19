@@ -13,6 +13,7 @@ import { RegisterDto } from './dto/register.dto';
 import { Roles } from './decorators/roles.decorator';
 import { JwtAuthGuard } from './guards/jwt-auth.guard';
 import { RolesGuard } from './guards/roles.guard';
+import { RefreshTokenDto } from './dto/refresh-token.dto';
 
 @Controller('auth')
 export class AuthController {
@@ -41,5 +42,12 @@ export class AuthController {
     return {
       message: 'You are an admin',
     };
+  }
+  @Post('refresh')
+  refresh(@Body() refreshTokenDto: RefreshTokenDto) {
+    return this.authService.refresh(
+      refreshTokenDto.sessionId,
+      refreshTokenDto.refreshToken,
+    );
   }
 }
