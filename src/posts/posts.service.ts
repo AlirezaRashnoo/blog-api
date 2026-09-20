@@ -20,6 +20,7 @@ export class PostsService {
       return await this.prisma.post.create({
         data: {
           ...createPostDto,
+          status: 'DRAFT',
           authorId: userId,
         },
       });
@@ -174,5 +175,39 @@ export class PostsService {
     return {
       message: 'Post deleted successfully',
     };
+  }
+
+  async publish(id: number) {
+    const post = await this.findById(id);
+
+    if (post.status !== 'DRAFT') {
+      throw new ConflictException('Only draft posts can be published');
+    }
+
+    return this.prisma.post.update({
+      where: {
+        id,
+      },
+      data: {
+        status: 'PUBLISHED',
+      },
+    });
+  }
+
+  async archive(id: number) {
+    const post = await this.findById(id);
+
+    if (post.status !== 'PUBLISHED') {
+      throw new ConflictException('Only published posts can be archived');
+    }
+
+    return this.prisma.post.update({
+      where: {
+        id,
+      },
+      data: {
+        status: 'ARCHIVED',
+      },
+    });
   }
 }

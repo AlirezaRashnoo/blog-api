@@ -70,6 +70,20 @@ export class PostsController {
   // Public single post
   // =========================
 
+  @Post(':id/publish')
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Roles('ADMIN')
+  publish(@Param('id') id: string) {
+    return this.postsService.publish(Number(id));
+  }
+
+  @Post(':id/archive')
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Roles('ADMIN')
+  archive(@Param('id') id: string) {
+    return this.postsService.archive(Number(id));
+  }
+
   @Get(':id')
   findPublishedOne(@Param('id') id: string) {
     return this.postsService.findPublishedOne(Number(id));

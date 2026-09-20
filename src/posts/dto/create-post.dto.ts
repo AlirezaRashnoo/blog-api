@@ -1,6 +1,4 @@
-import { IsEnum, IsOptional, IsString, MinLength } from 'class-validator';
-
-import { PostStatus } from '../../generated/prisma/enums';
+import { IsString, MinLength } from 'class-validator';
 
 export class CreatePostDto {
   @IsString()
@@ -14,8 +12,4 @@ export class CreatePostDto {
   @IsString()
   @MinLength(1)
   content: string;
-
-  @IsOptional()
-  @IsEnum(PostStatus)
-  status?: PostStatus;
 }
