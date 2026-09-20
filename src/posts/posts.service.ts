@@ -9,6 +9,8 @@ import { PrismaService } from '../prisma/prisma.service';
 import { CreatePostDto } from './dto/create-post.dto';
 import { UpdatePostDto } from './dto/update-post.dto';
 
+type UserRole = 'USER' | 'ADMIN';
+
 @Injectable()
 export class PostsService {
   constructor(private readonly prisma: PrismaService) {}
@@ -30,30 +32,15 @@ export class PostsService {
     }
   }
 
+  // =========================
+  // Public queries
+  // =========================
+
   async findPublished() {
     return this.prisma.post.findMany({
       where: {
         status: 'PUBLISHED',
       },
-      orderBy: {
-        createdAt: 'desc',
-      },
-    });
-  }
-
-  async findMine(userId: number) {
-    return this.prisma.post.findMany({
-      where: {
-        authorId: userId,
-      },
-      orderBy: {
-        createdAt: 'desc',
-      },
-    });
-  }
-
-  async findAllForAdmin() {
-    return this.prisma.post.findMany({
       orderBy: {
         createdAt: 'desc',
       },
@@ -75,6 +62,21 @@ export class PostsService {
     return post;
   }
 
+  // =========================
+  // User queries
+  // =========================
+
+  async findMine(userId: number) {
+    return this.prisma.post.findMany({
+      where: {
+        authorId: userId,
+      },
+      orderBy: {
+        createdAt: 'desc',
+      },
+    });
+  }
+
   async findMineOne(id: number, userId: number) {
     const post = await this.prisma.post.findFirst({
       where: {
@@ -90,12 +92,57 @@ export class PostsService {
     return post;
   }
 
-  async update(id: number, userId: number, updatePostDto: UpdatePostDto) {
-    const post = await this.findMineOne(id, userId);
+  // =========================
+  // Admin queries
+  // =========================
+
+  async findAllForAdmin() {
+    return this.prisma.post.findMany({
+      orderBy: {
+        createdAt: 'desc',
+      },
+    });
+  }
+
+  // =========================
+  // Internal resource lookup
+  // =========================
+
+  async findById(id: number) {
+    const post = await this.prisma.post.findUnique({
+      where: {
+        id,
+      },
+    });
+
+    if (!post) {
+      throw new NotFoundException('Post not found');
+    }
+
+    return post;
+  }
+
+  // =========================
+  // Update
+  // =========================
+
+  async update(
+    id: number,
+    userId: number,
+    role: UserRole,
+    updatePostDto: UpdatePostDto,
+  ) {
+    const post = await this.findById(id);
+
+    if (role !== 'ADMIN' && post.authorId !== userId) {
+      throw new ForbiddenException('You can only modify your own posts');
+    }
 
     try {
       return await this.prisma.post.update({
-        where: { id },
+        where: {
+          id,
+        },
         data: updatePostDto,
       });
     } catch (error) {
@@ -107,11 +154,21 @@ export class PostsService {
     }
   }
 
-  async remove(id: number, userId: number) {
-    await this.findMineOne(id, userId);
+  // =========================
+  // Delete
+  // =========================
+
+  async remove(id: number, userId: number, role: UserRole) {
+    const post = await this.findById(id);
+
+    if (role !== 'ADMIN' && post.authorId !== userId) {
+      throw new ForbiddenException('You can only modify your own posts');
+    }
 
     await this.prisma.post.delete({
-      where: { id },
+      where: {
+        id,
+      },
     });
 
     return {

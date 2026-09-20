@@ -95,12 +95,17 @@ export class PostsController {
     @Param('id') id: string,
     @Body() updatePostDto: UpdatePostDto,
   ) {
-    return this.postsService.update(Number(id), req.user.userId, updatePostDto);
+    return this.postsService.update(
+      Number(id),
+      req.user.userId,
+      req.user.role,
+      updatePostDto,
+    );
   }
 
   @Delete(':id')
   @UseGuards(JwtAuthGuard)
   remove(@Req() req: AuthenticatedRequest, @Param('id') id: string) {
-    return this.postsService.remove(Number(id), req.user.userId);
+    return this.postsService.remove(Number(id), req.user.userId, req.user.role);
   }
 }
