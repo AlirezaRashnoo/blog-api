@@ -139,12 +139,22 @@ export class PostsService {
       throw new ForbiddenException('You can only modify your own posts');
     }
 
+    const data: UpdatePostDto & {
+      status?: 'DRAFT' | 'PUBLISHED' | 'ARCHIVED';
+    } = {
+      ...updatePostDto,
+    };
+
+    if (role !== 'ADMIN' && post.status === 'PUBLISHED') {
+      data.status = 'DRAFT';
+    }
+
     try {
       return await this.prisma.post.update({
         where: {
           id,
         },
-        data: updatePostDto,
+        data,
       });
     } catch (error) {
       if (error instanceof Error && 'code' in error && error.code === 'P2002') {
