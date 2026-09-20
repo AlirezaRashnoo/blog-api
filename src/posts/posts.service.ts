@@ -30,7 +30,29 @@ export class PostsService {
     }
   }
 
-  async findAll() {
+  async findPublished() {
+    return this.prisma.post.findMany({
+      where: {
+        status: 'PUBLISHED',
+      },
+      orderBy: {
+        createdAt: 'desc',
+      },
+    });
+  }
+
+  async findMine(userId: number) {
+    return this.prisma.post.findMany({
+      where: {
+        authorId: userId,
+      },
+      orderBy: {
+        createdAt: 'desc',
+      },
+    });
+  }
+
+  async findAllForAdmin() {
     return this.prisma.post.findMany({
       orderBy: {
         createdAt: 'desc',
@@ -38,9 +60,27 @@ export class PostsService {
     });
   }
 
-  async findOne(id: number) {
-    const post = await this.prisma.post.findUnique({
-      where: { id },
+  async findPublishedOne(id: number) {
+    const post = await this.prisma.post.findFirst({
+      where: {
+        id,
+        status: 'PUBLISHED',
+      },
+    });
+
+    if (!post) {
+      throw new NotFoundException('Post not found');
+    }
+
+    return post;
+  }
+
+  async findMineOne(id: number, userId: number) {
+    const post = await this.prisma.post.findFirst({
+      where: {
+        id,
+        authorId: userId,
+      },
     });
 
     if (!post) {
@@ -51,11 +91,7 @@ export class PostsService {
   }
 
   async update(id: number, userId: number, updatePostDto: UpdatePostDto) {
-    const post = await this.findOne(id);
-
-    if (post.authorId !== userId) {
-      throw new ForbiddenException('You can only update your own posts');
-    }
+    const post = await this.findMineOne(id, userId);
 
     try {
       return await this.prisma.post.update({
@@ -72,11 +108,7 @@ export class PostsService {
   }
 
   async remove(id: number, userId: number) {
-    const post = await this.findOne(id);
-
-    if (post.authorId !== userId) {
-      throw new ForbiddenException('You can only delete your own posts');
-    }
+    await this.findMineOne(id, userId);
 
     await this.prisma.post.delete({
       where: { id },
