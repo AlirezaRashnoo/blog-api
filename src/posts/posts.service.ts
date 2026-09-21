@@ -8,6 +8,7 @@ import {
 import { PrismaService } from '../prisma/prisma.service';
 import { CreatePostDto } from './dto/create-post.dto';
 import { UpdatePostDto } from './dto/update-post.dto';
+import { FindPostsDto } from './dto/find-posts.dto';
 
 type UserRole = 'USER' | 'ADMIN';
 
@@ -37,15 +38,57 @@ export class PostsService {
   // Public queries
   // =========================
 
-  async findPublished() {
-    return this.prisma.post.findMany({
-      where: {
-        status: 'PUBLISHED',
+  async findPublished(findPostsDto: FindPostsDto) {
+    const { page, limit, search } = findPostsDto;
+
+    const skip = (page - 1) * limit;
+
+    const where = {
+      status: 'PUBLISHED' as const,
+      ...(search
+        ? {
+            OR: [
+              {
+                title: {
+                  contains: search,
+                  mode: 'insensitive' as const,
+                },
+              },
+              {
+                content: {
+                  contains: search,
+                  mode: 'insensitive' as const,
+                },
+              },
+            ],
+          }
+        : {}),
+    };
+
+    const [posts, total] = await Promise.all([
+      this.prisma.post.findMany({
+        where,
+        skip,
+        take: limit,
+        orderBy: {
+          createdAt: 'desc',
+        },
+      }),
+
+      this.prisma.post.count({
+        where,
+      }),
+    ]);
+
+    return {
+      data: posts,
+      meta: {
+        page,
+        limit,
+        total,
+        totalPages: Math.ceil(total / limit),
       },
-      orderBy: {
-        createdAt: 'desc',
-      },
-    });
+    };
   }
 
   async findPublishedOne(id: number) {
@@ -67,15 +110,57 @@ export class PostsService {
   // User queries
   // =========================
 
-  async findMine(userId: number) {
-    return this.prisma.post.findMany({
-      where: {
-        authorId: userId,
+  async findMine(userId: number, findPostsDto: FindPostsDto) {
+    const { page, limit, search } = findPostsDto;
+
+    const skip = (page - 1) * limit;
+
+    const where = {
+      authorId: userId,
+      ...(search
+        ? {
+            OR: [
+              {
+                title: {
+                  contains: search,
+                  mode: 'insensitive' as const,
+                },
+              },
+              {
+                content: {
+                  contains: search,
+                  mode: 'insensitive' as const,
+                },
+              },
+            ],
+          }
+        : {}),
+    };
+
+    const [posts, total] = await Promise.all([
+      this.prisma.post.findMany({
+        where,
+        skip,
+        take: limit,
+        orderBy: {
+          createdAt: 'desc',
+        },
+      }),
+
+      this.prisma.post.count({
+        where,
+      }),
+    ]);
+
+    return {
+      data: posts,
+      meta: {
+        page,
+        limit,
+        total,
+        totalPages: Math.ceil(total / limit),
       },
-      orderBy: {
-        createdAt: 'desc',
-      },
-    });
+    };
   }
 
   async findMineOne(id: number, userId: number) {
@@ -97,12 +182,54 @@ export class PostsService {
   // Admin queries
   // =========================
 
-  async findAllForAdmin() {
-    return this.prisma.post.findMany({
-      orderBy: {
-        createdAt: 'desc',
+  async findAllForAdmin(findPostsDto: FindPostsDto) {
+    const { page, limit, search } = findPostsDto;
+
+    const skip = (page - 1) * limit;
+
+    const where = search
+      ? {
+          OR: [
+            {
+              title: {
+                contains: search,
+                mode: 'insensitive' as const,
+              },
+            },
+            {
+              content: {
+                contains: search,
+                mode: 'insensitive' as const,
+              },
+            },
+          ],
+        }
+      : {};
+
+    const [posts, total] = await Promise.all([
+      this.prisma.post.findMany({
+        where,
+        skip,
+        take: limit,
+        orderBy: {
+          createdAt: 'desc',
+        },
+      }),
+
+      this.prisma.post.count({
+        where,
+      }),
+    ]);
+
+    return {
+      data: posts,
+      meta: {
+        page,
+        limit,
+        total,
+        totalPages: Math.ceil(total / limit),
       },
-    });
+    };
   }
 
   // =========================

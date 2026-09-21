@@ -6,6 +6,7 @@ import {
   Param,
   Patch,
   Post,
+  Query,
   Req,
   UseGuards,
 } from '@nestjs/common';
@@ -18,6 +19,7 @@ import { RolesGuard } from '../auth/guards/roles.guard';
 import { CreatePostDto } from './dto/create-post.dto';
 import { UpdatePostDto } from './dto/update-post.dto';
 import { PostsService } from './posts.service';
+import { FindPostsDto } from './dto/find-posts.dto';
 
 interface AuthenticatedRequest extends Request {
   user: {
@@ -35,8 +37,8 @@ export class PostsController {
   // =========================
 
   @Get()
-  findPublished() {
-    return this.postsService.findPublished();
+  findPublished(@Query() findPostsDto: FindPostsDto) {
+    return this.postsService.findPublished(findPostsDto);
   }
 
   // =========================
@@ -45,8 +47,11 @@ export class PostsController {
 
   @Get('me')
   @UseGuards(JwtAuthGuard)
-  findMine(@Req() req: AuthenticatedRequest) {
-    return this.postsService.findMine(req.user.userId);
+  findMine(
+    @Req() req: AuthenticatedRequest,
+    @Query() findPostsDto: FindPostsDto,
+  ) {
+    return this.postsService.findMine(req.user.userId, findPostsDto);
   }
 
   @Get('me/:id')
@@ -62,8 +67,8 @@ export class PostsController {
   @Get('admin')
   @UseGuards(JwtAuthGuard, RolesGuard)
   @Roles('ADMIN')
-  findAllForAdmin() {
-    return this.postsService.findAllForAdmin();
+  findAllForAdmin(@Query() findPostsDto: FindPostsDto) {
+    return this.postsService.findAllForAdmin(findPostsDto);
   }
 
   // =========================
