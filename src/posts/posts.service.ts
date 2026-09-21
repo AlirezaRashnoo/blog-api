@@ -17,10 +17,23 @@ export class PostsService {
   constructor(private readonly prisma: PrismaService) {}
 
   async create(userId: number, createPostDto: CreatePostDto) {
+    const category = await this.prisma.category.findUnique({
+      where: {
+        id: createPostDto.categoryId,
+      },
+    });
+
+    if (!category) {
+      throw new NotFoundException('Category not found');
+    }
+
     try {
       return await this.prisma.post.create({
         data: {
-          ...createPostDto,
+          title: createPostDto.title,
+          slug: createPostDto.slug,
+          content: createPostDto.content,
+          categoryId: createPostDto.categoryId,
           status: 'DRAFT',
           authorId: userId,
         },
@@ -264,6 +277,18 @@ export class PostsService {
 
     if (role !== 'ADMIN' && post.authorId !== userId) {
       throw new ForbiddenException('You can only modify your own posts');
+    }
+
+    if (updatePostDto.categoryId !== undefined) {
+      const category = await this.prisma.category.findUnique({
+        where: {
+          id: updatePostDto.categoryId,
+        },
+      });
+
+      if (!category) {
+        throw new NotFoundException('Category not found');
+      }
     }
 
     const data: UpdatePostDto & {

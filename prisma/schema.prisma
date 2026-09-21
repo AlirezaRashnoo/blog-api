@@ -68,9 +68,24 @@ model Post {
   authorId  Int
   author    User       @relation(fields: [authorId], references: [id], onDelete: Cascade)
 
+  categoryId Int
+category   Category @relation(fields: [categoryId], references: [id], onDelete: Restrict)
+
   createdAt DateTime   @default(now())
   updatedAt DateTime   @updatedAt
 
   @@index([authorId])
   @@index([status])
+  @@index([categoryId])
+}
+
+
+model Category {
+  id        Int      @id @default(autoincrement())
+  name      String
+  slug      String   @unique
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  posts Post[]
 }

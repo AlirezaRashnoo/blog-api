@@ -1,4 +1,5 @@
-import { IsString, MinLength } from 'class-validator';
+import { IsInt, IsString, Min, MinLength } from 'class-validator';
+import { Type } from 'class-transformer';
 
 export class CreatePostDto {
   @IsString()
@@ -12,4 +13,9 @@ export class CreatePostDto {
   @IsString()
   @MinLength(1)
   content: string;
+
+  @Type(() => Number)
+  @IsInt()
+  @Min(1)
+  categoryId: number;
 }

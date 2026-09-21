@@ -1,4 +1,5 @@
-import { IsOptional, IsString, MinLength } from 'class-validator';
+import { IsInt, IsOptional, IsString, Min, MinLength } from 'class-validator';
+import { Type } from 'class-transformer';
 
 export class UpdatePostDto {
   @IsOptional()
@@ -15,4 +16,10 @@ export class UpdatePostDto {
   @IsString()
   @MinLength(1)
   content?: string;
+
+  @IsOptional()
+  @Type(() => Number)
+  @IsInt()
+  @Min(1)
+  categoryId?: number;
 }
