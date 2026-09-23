@@ -87,7 +87,7 @@ export class CommentsService {
       throw new NotFoundException('Post not found');
     }
 
-    return this.prisma.comment.findMany({
+    const comments = await this.prisma.comment.findMany({
       where: {
         postId,
       },
@@ -106,6 +106,39 @@ export class CommentsService {
         },
       },
     });
+
+    const commentMap = new Map<
+      number,
+      (typeof comments)[number] & {
+        replies: Array<(typeof comments)[number]>;
+      }
+    >();
+
+    for (const comment of comments) {
+      commentMap.set(comment.id, {
+        ...comment,
+        replies: [],
+      });
+    }
+
+    const rootComments: Array<(typeof comments)[number]> = [];
+
+    for (const comment of comments) {
+      const currentComment = commentMap.get(comment.id)!;
+
+      if (comment.parentId === null) {
+        rootComments.push(currentComment);
+        continue;
+      }
+
+      const parentComment = commentMap.get(comment.parentId);
+
+      if (parentComment) {
+        parentComment.replies.push(currentComment);
+      }
+    }
+
+    return rootComments;
   }
 
   // =========================
