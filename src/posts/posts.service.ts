@@ -12,9 +12,17 @@ import { FindPostsDto } from './dto/find-posts.dto';
 
 type UserRole = 'USER' | 'ADMIN';
 
+const postWithCategory = {
+  category: true,
+} as const;
+
 @Injectable()
 export class PostsService {
   constructor(private readonly prisma: PrismaService) {}
+
+  // =========================
+  // Create
+  // =========================
 
   async create(userId: number, createPostDto: CreatePostDto) {
     const category = await this.prisma.category.findUnique({
@@ -37,6 +45,7 @@ export class PostsService {
           status: 'DRAFT',
           authorId: userId,
         },
+        include: postWithCategory,
       });
     } catch (error) {
       if (error instanceof Error && 'code' in error && error.code === 'P2002') {
@@ -52,12 +61,19 @@ export class PostsService {
   // =========================
 
   async findPublished(findPostsDto: FindPostsDto) {
-    const { page, limit, search } = findPostsDto;
+    const { page, limit, search, categoryId } = findPostsDto;
 
     const skip = (page - 1) * limit;
 
     const where = {
       status: 'PUBLISHED' as const,
+
+      ...(categoryId !== undefined
+        ? {
+            categoryId,
+          }
+        : {}),
+
       ...(search
         ? {
             OR: [
@@ -86,6 +102,7 @@ export class PostsService {
         orderBy: {
           createdAt: 'desc',
         },
+        include: postWithCategory,
       }),
 
       this.prisma.post.count({
@@ -110,6 +127,7 @@ export class PostsService {
         id,
         status: 'PUBLISHED',
       },
+      include: postWithCategory,
     });
 
     if (!post) {
@@ -124,12 +142,19 @@ export class PostsService {
   // =========================
 
   async findMine(userId: number, findPostsDto: FindPostsDto) {
-    const { page, limit, search } = findPostsDto;
+    const { page, limit, search, categoryId } = findPostsDto;
 
     const skip = (page - 1) * limit;
 
     const where = {
       authorId: userId,
+
+      ...(categoryId !== undefined
+        ? {
+            categoryId,
+          }
+        : {}),
+
       ...(search
         ? {
             OR: [
@@ -158,6 +183,7 @@ export class PostsService {
         orderBy: {
           createdAt: 'desc',
         },
+        include: postWithCategory,
       }),
 
       this.prisma.post.count({
@@ -182,6 +208,7 @@ export class PostsService {
         id,
         authorId: userId,
       },
+      include: postWithCategory,
     });
 
     if (!post) {
@@ -196,28 +223,36 @@ export class PostsService {
   // =========================
 
   async findAllForAdmin(findPostsDto: FindPostsDto) {
-    const { page, limit, search } = findPostsDto;
+    const { page, limit, search, categoryId } = findPostsDto;
 
     const skip = (page - 1) * limit;
 
-    const where = search
-      ? {
-          OR: [
-            {
-              title: {
-                contains: search,
-                mode: 'insensitive' as const,
+    const where = {
+      ...(categoryId !== undefined
+        ? {
+            categoryId,
+          }
+        : {}),
+
+      ...(search
+        ? {
+            OR: [
+              {
+                title: {
+                  contains: search,
+                  mode: 'insensitive' as const,
+                },
               },
-            },
-            {
-              content: {
-                contains: search,
-                mode: 'insensitive' as const,
+              {
+                content: {
+                  contains: search,
+                  mode: 'insensitive' as const,
+                },
               },
-            },
-          ],
-        }
-      : {};
+            ],
+          }
+        : {}),
+    };
 
     const [posts, total] = await Promise.all([
       this.prisma.post.findMany({
@@ -227,6 +262,7 @@ export class PostsService {
         orderBy: {
           createdAt: 'desc',
         },
+        include: postWithCategory,
       }),
 
       this.prisma.post.count({
@@ -307,6 +343,7 @@ export class PostsService {
           id,
         },
         data,
+        include: postWithCategory,
       });
     } catch (error) {
       if (error instanceof Error && 'code' in error && error.code === 'P2002') {
@@ -339,6 +376,10 @@ export class PostsService {
     };
   }
 
+  // =========================
+  // Publishing workflow
+  // =========================
+
   async publish(id: number) {
     const post = await this.findById(id);
 
@@ -353,6 +394,7 @@ export class PostsService {
       data: {
         status: 'PUBLISHED',
       },
+      include: postWithCategory,
     });
   }
 
@@ -370,6 +412,7 @@ export class PostsService {
       data: {
         status: 'ARCHIVED',
       },
+      include: postWithCategory,
     });
   }
 }
