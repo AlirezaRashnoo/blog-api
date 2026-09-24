@@ -7,8 +7,9 @@ import { SessionsModule } from './sessions/sessions.module';
 import { PostsModule } from './posts/posts.module';
 import { CategoriesModule } from './categories/categories.module';
 import { CommentsModule } from './comments/comments.module';
+import { LikesModule } from './likes/likes.module';
 
 @Module({
-  imports: [PrismaModule, AuthModule, UsersModule, SessionsModule, PostsModule, CategoriesModule, CommentsModule],
+  imports: [PrismaModule, AuthModule, UsersModule, SessionsModule, PostsModule, CategoriesModule, CommentsModule, LikesModule],
 })
 export class AppModule {}
