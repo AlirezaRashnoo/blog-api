@@ -29,10 +29,11 @@ model User {
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
-  sessions Session[]
-  posts    Post[]
-  comments Comment[]
-  likes    Like[]
+  sessions  Session[]
+  posts     Post[]
+  comments  Comment[]
+  likes     Like[]
+  bookmarks Bookmark[]
 }
 
 model Session {
@@ -69,9 +70,10 @@ model Post {
   categoryId Int
   category   Category @relation(fields: [categoryId], references: [id], onDelete: Restrict)
 
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
+  createdAt DateTime   @default(now())
+  updatedAt DateTime   @updatedAt
   likes     Like[]
+  bookmarks Bookmark[]
 
   @@index([authorId])
   @@index([status])
@@ -111,6 +113,20 @@ model Comment {
 }
 
 model Like {
+  id        Int      @id @default(autoincrement())
+  userId    Int
+  postId    Int
+  createdAt DateTime @default(now())
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+  post Post @relation(fields: [postId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, postId])
+  @@index([postId])
+  @@index([userId])
+}
+
+model Bookmark {
   id        Int      @id @default(autoincrement())
   userId    Int
   postId    Int
