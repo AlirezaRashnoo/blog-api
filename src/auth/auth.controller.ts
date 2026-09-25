@@ -14,6 +14,7 @@ import { Roles } from './decorators/roles.decorator';
 import { JwtAuthGuard } from './guards/jwt-auth.guard';
 import { RolesGuard } from './guards/roles.guard';
 import { RefreshTokenDto } from './dto/refresh-token.dto';
+import { ApiBearerAuth } from '@nestjs/swagger';
 
 @Controller('auth')
 export class AuthController {
@@ -31,6 +32,7 @@ export class AuthController {
 
   @Get('me')
   @UseGuards(JwtAuthGuard)
+  @ApiBearerAuth()
   getMe(@Request() req: any) {
     return req.user;
   }
@@ -38,11 +40,11 @@ export class AuthController {
   @Get('admin-test')
   @UseGuards(JwtAuthGuard, RolesGuard)
   @Roles('ADMIN')
+  @ApiBearerAuth()
   adminTest() {
-    return {
-      message: 'You are an admin',
-    };
+    return { message: 'You are an admin' };
   }
+
   @Post('refresh')
   refresh(@Body() refreshTokenDto: RefreshTokenDto) {
     return this.authService.refresh(
