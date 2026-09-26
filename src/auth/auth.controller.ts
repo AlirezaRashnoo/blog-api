@@ -15,17 +15,20 @@ import { JwtAuthGuard } from './guards/jwt-auth.guard';
 import { RolesGuard } from './guards/roles.guard';
 import { RefreshTokenDto } from './dto/refresh-token.dto';
 import { ApiBearerAuth } from '@nestjs/swagger';
+import { Throttle } from '@nestjs/throttler';
 
 @Controller('auth')
 export class AuthController {
   constructor(private readonly authService: AuthService) {}
 
   @Post('register')
+  @Throttle({ default: { limit: 5, ttl: 60_000 } })
   register(@Body() registerDto: RegisterDto) {
     return this.authService.register(registerDto);
   }
 
   @Post('login')
+  @Throttle({ default: { limit: 5, ttl: 60_000 } })
   login(@Body() loginDto: LoginDto) {
     return this.authService.login(loginDto);
   }
@@ -46,6 +49,7 @@ export class AuthController {
   }
 
   @Post('refresh')
+  @Throttle({ default: { limit: 5, ttl: 60_000 } })
   refresh(@Body() refreshTokenDto: RefreshTokenDto) {
     return this.authService.refresh(
       refreshTokenDto.sessionId,
